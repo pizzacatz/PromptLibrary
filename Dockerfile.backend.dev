@@ -1,0 +1,19 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files for installation
+COPY package*.json ./
+COPY backend/package*.json ./backend/
+
+# Install all dependencies including dev dependencies
+RUN npm install
+
+# Copy the rest of the codebase
+COPY . .
+
+# Expose API and debug ports
+EXPOSE 3000 9229
+
+# Start development server with hot reloading
+CMD ["npm", "run", "dev:backend"] 

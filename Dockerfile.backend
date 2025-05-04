@@ -1,0 +1,41 @@
+FROM node:18-alpine as build
+
+WORKDIR /app
+
+# Copy package files first to leverage Docker caching
+COPY package*.json ./
+COPY backend/package*.json ./backend/
+
+# Install dependencies
+RUN npm ci
+
+# Copy remaining files
+COPY . .
+
+# Build the backend application
+RUN npm run build --workspace=backend
+
+# Production stage with minimal image
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files and built artifacts
+COPY --from=build /app/package*.json ./
+COPY --from=build /app/backend/package*.json ./backend/
+COPY --from=build /app/backend/dist ./backend/dist
+COPY --from=build /app/backend/netlify.toml ./backend/
+COPY --from=build /app/backend/serverless.yml ./backend/
+
+# Install production dependencies only
+RUN npm ci --omit=dev --workspace=backend
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Expose the API port
+EXPOSE 3000
+
+# Start the server
+CMD ["node", "backend/dist/index.js"] 

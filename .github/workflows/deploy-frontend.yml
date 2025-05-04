@@ -1,0 +1,55 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+      - 'package.json'
+      - 'tsconfig.json'
+      - '.eslintrc.json'
+      - '.prettierrc'
+      - 'jest.config.js'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Lint
+        run: npm run lint -- --workspace=frontend
+      
+      - name: Type check
+        run: npm run typecheck -- --project frontend/tsconfig.json
+      
+      - name: Test
+        run: npm test -- --selectProjects=frontend
+      
+      - name: Build
+        run: npm run build -- --workspace=frontend
+        
+      - name: Cache build artifacts
+        uses: actions/cache@v3
+        with:
+          path: |
+            frontend/dist
+          key: ${{ runner.os }}-frontend-build-${{ github.sha }}
+      
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: frontend/dist
+          branch: gh-pages 

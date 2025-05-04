@@ -1,0 +1,20 @@
+service: prompt-library-backend
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+
+functions:
+  api:
+    handler: dist/index.handler
+    events:
+      - httpApi:
+          path: /api/{proxy+}
+          method: any
+
+plugins:
+  - serverless-offline 
